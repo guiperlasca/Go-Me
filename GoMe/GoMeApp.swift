@@ -11,6 +11,7 @@ import SwiftUI
 struct GoMeApp: App {
     var body: some Scene {
         WindowGroup {
+            
             ContentView()
         }
     }
