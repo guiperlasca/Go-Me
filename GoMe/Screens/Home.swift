@@ -152,10 +152,10 @@ struct Home: View {
                     }
                 }
             }
-//            .sheet(isPresented: $addGoal) {
-//                AddGoal()
-//                    .presentationDragIndicator(.visible)
-//            }
+            .sheet(isPresented: $addGoal) {
+                AddGoal()
+                    .presentationDragIndicator(.visible)
+            }
 //            .sheet(isPresented: $addWallet) {
 //                AddWallet()
 //                    .presentationDragIndicator(.visible)

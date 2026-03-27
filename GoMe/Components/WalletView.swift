@@ -15,7 +15,8 @@ struct WalletView: View {
         HStack(alignment: .center, spacing: 16) {
             Image(systemName: wallet.category.imageName)
             
-            VStack(alignment: .leading, spacing: 4) {                  Text(wallet.name)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(wallet.name)
                     .foregroundStyle(.primary)
                 Text(wallet.date, style: .date)
                     .foregroundStyle(.secondary)
