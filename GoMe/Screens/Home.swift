@@ -37,14 +37,15 @@ struct Home: View {
                             )
                             .frame(height: 180)
                         
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 0) {
                             HStack {
-                                Image("profile-picture")
+                            Image(systemName: "person.circle")
                                     .resizable()
                                     .scaledToFill()
-                                    .frame(width: 48, height: 48)
+                                    .frame(width: 40, height: 40)
                                     .clipShape(Circle())
-                                
+                                    .foregroundStyle(.white.opacity(0.8))
+
                                 Text("Hello user!")
                                     .font(.headline)
                                     .foregroundStyle(.white)
@@ -52,9 +53,7 @@ struct Home: View {
                                 Spacer()
                             }
                             
-                            Spacer()
-                            
-                            HStack{
+                            VStack{
                                 VStack (alignment: .leading) {
                                 Text("Todal Balance")
                                     .font(.subheadline)
