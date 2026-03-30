@@ -9,45 +9,41 @@ import Foundation
 import SwiftUI
 
 struct AddGoal: View {
-    
+
+    @Environment(\.dismiss) private var dismiss
+
     @State private var name: String = ""
     @State private var description: String = ""
     @State private var category: Category?
     @State private var isSharedGoal = false
     @State private var endDate = Date()
-    
+    @State private var price: String = ""
+
+
+    private let accentTeal = Color(red: 0/255, green: 139/255, blue: 185/255)
+
+    private let fieldBackground = Color(white: 0.17)
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Goal")
-                            .font(.system(.subheadline, weight: .semibold))
-                            .padding(.horizontal)
-                        
-                        TextField("Insert the Goal title here", text: $name)
-                            .padding(.vertical, 12)
-                            .padding(.horizontal)
-                            .background(
-                                RoundedRectangle(cornerRadius: 26)
-                                    .foregroundStyle(.blackBox)
-                            )
-                    }
-                    
+                VStack(spacing: 12) {
+
+                    // MARK: Category
                     HStack(spacing: 12) {
-                        Image(systemName: "list.bullet")
+                        Image(systemName: category?.imageName ?? "list.bullet")
                             .foregroundStyle(.white)
-                            .frame(width: 30, height: 30)
+                            .frame(width: 32, height: 32)
                             .background(
-                                RoundedRectangle(cornerRadius: 7)
-                                    .foregroundStyle(.white)
+                                RoundedRectangle(cornerRadius: 8)
+                                    .foregroundStyle(Color(red: 0/255, green: 139/255, blue: 185/255))
                             )
+
                         Text("Category")
-                            .padding(.vertical, 11)
-                        
+                            .foregroundStyle(.primary)
+
                         Spacer()
-                        
+
                         Menu {
                             ForEach(Category.allCases) { cat in
                                 Button(cat.rawValue, systemImage: cat.imageName) {
@@ -55,57 +51,127 @@ struct AddGoal: View {
                                 }
                             }
                         } label: {
-                            HStack {
+                            HStack(spacing: 4) {
                                 Text(category?.rawValue ?? "Select")
                                 Image(systemName: "chevron.up.chevron.down")
                             }
+                            .foregroundStyle(Color(red: 0/255, green: 139/255, blue: 185/255))
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
                     .background(
-                        RoundedRectangle(cornerRadius: 26)
-                            .foregroundStyle(.blackBox)
+                        RoundedRectangle(cornerRadius: 16)
+                            .foregroundStyle(fieldBackground)
                     )
-                    
-                    HStack {
-                        Text("End Date")
-                        Spacer()
-                        DatePicker("End Date", selection: $endDate, displayedComponents: [.date])
+
+                    // MARK: Goal Name
+                    TextField("Goal name", text: $name)
+                        .padding(.vertical, 14)
+                        .padding(.horizontal, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .foregroundStyle(fieldBackground)
+                        )
+
+                    // MARK: Deadline
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Deadline")
+                            .font(.system(.subheadline, weight: .bold))
+                            .padding(.horizontal, 4)
+
+                        HStack(spacing: 12) {
+                            DatePicker(
+                                "",
+                                selection: $endDate,
+                                displayedComponents: [.date]
+                            )
                             .labelsHidden()
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .foregroundStyle(fieldBackground)
+                            )
+
+                            HStack {
+                                TextField("$ Set the price", text: $price)
+                                    .keyboardType(.decimalPad)
+                            }
+                            .padding(.vertical, 14)
+                            .padding(.horizontal, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .foregroundStyle(fieldBackground)
+                            )
+                        }
                     }
-                    .padding(.horizontal)
-                    .background(
-                        RoundedRectangle(cornerRadius: 26)
-                            .foregroundStyle(.blackBox)
-                    )
-                    
+
+                    // MARK: Description
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Description")
-                            .font(.system(.subheadline, weight: .semibold))
-                            .padding(.horizontal)
-                        
-                        TextField("More details about the goal", text: $description, axis: .vertical)
-                                                   .lineLimit(5...)
-                                                   .padding(.vertical, 12)
-                                                   .padding(.horizontal)
-                                                   .background(
-                                                       RoundedRectangle(cornerRadius: 26)
-                                                           .foregroundStyle(.blackBox)
-                                                   )
-                                           }
-                                           
-                                           Toggle(isOn: $isSharedGoal) {
-                                               Text("Shared Goal")
-                                           }
-                                           .padding(.horizontal)
-                                       }
-                                       .padding()
-                                   }
-                                   .navigationTitle("New Goal")
-                               }
-                           }
-                       }
+                            .font(.system(.subheadline, weight: .bold))
+                            .padding(.horizontal, 4)
 
-                       #Preview {
-                           AddGoal()
-                       }
+                        TextField("More details about the goal", text: $description, axis: .vertical)
+                            .lineLimit(5...)
+                            .padding(.vertical, 14)
+                            .padding(.horizontal, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .foregroundStyle(fieldBackground)
+                            )
+                    }
+
+                    // MARK: Shared Goal Toggle
+                    Toggle(isOn: $isSharedGoal) {
+                        Text("Shared goal")
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .foregroundStyle(fieldBackground)
+                    )
+                }
+                .padding()
+            }
+            .navigationTitle("New Goal")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .foregroundStyle(.primary)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .foregroundStyle(fieldBackground)
+                            )
+                    }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Add", systemImage: "checkmark") {
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(
+                        LinearGradient(
+                            colors: [.primaryBlue, .primaryGreen],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                }
+            }
+            .background(Color("DarkBackground").ignoresSafeArea())
+            .preferredColorScheme(.dark)
+        }
+    }
+}
+
+#Preview {
+    AddGoal()
+}
