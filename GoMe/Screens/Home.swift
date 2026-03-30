@@ -138,7 +138,7 @@ struct Home: View {
                 }
                 .padding(.vertical)
             }
-            .background(.darkBackground)
+            .background(.blackBox)
             .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

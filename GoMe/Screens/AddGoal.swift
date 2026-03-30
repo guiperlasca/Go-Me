@@ -31,7 +31,7 @@ struct AddGoal: View {
                             .padding(.horizontal)
                             .background(
                                 RoundedRectangle(cornerRadius: 26)
-                                    .foregroundStyle(.darkBackground)
+                                    .foregroundStyle(.blackBox)
                             )
                     }
                     
@@ -64,7 +64,7 @@ struct AddGoal: View {
                     .padding(.horizontal)
                     .background(
                         RoundedRectangle(cornerRadius: 26)
-                            .foregroundStyle(.darkBackground)
+                            .foregroundStyle(.blackBox)
                     )
                     
                     HStack {
@@ -76,7 +76,7 @@ struct AddGoal: View {
                     .padding(.horizontal)
                     .background(
                         RoundedRectangle(cornerRadius: 26)
-                            .foregroundStyle(.darkBackground)
+                            .foregroundStyle(.blackBox)
                     )
                     
                     VStack(alignment: .leading, spacing: 8) {
@@ -90,7 +90,7 @@ struct AddGoal: View {
                                                    .padding(.horizontal)
                                                    .background(
                                                        RoundedRectangle(cornerRadius: 26)
-                                                           .foregroundStyle(.darkBackground)
+                                                           .foregroundStyle(.blackBox)
                                                    )
                                            }
                                            
