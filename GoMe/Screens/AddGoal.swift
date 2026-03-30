@@ -10,6 +10,7 @@ import SwiftUI
 
 struct AddGoal: View {
 
+    @Binding var goals: [Goal]
     @Environment(\.dismiss) private var dismiss
 
     @State private var name: String = ""
@@ -155,6 +156,13 @@ struct AddGoal: View {
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Add", systemImage: "checkmark") {
+                        guard let cat = category, !name.isEmpty else { return }
+                        var g = Goal(name: name, details: description, category: cat)
+                        g.endDate = endDate
+                        g.isGroup = isSharedGoal
+                        g.money = Double(price) ?? 0
+                        goals.append(g)
+                        dismiss()
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(
@@ -173,5 +181,6 @@ struct AddGoal: View {
 }
 
 #Preview {
-    AddGoal()
+    @Previewable @State var goals: [Goal] = []
+    return AddGoal(goals: $goals)
 }

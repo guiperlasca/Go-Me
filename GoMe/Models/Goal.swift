@@ -15,6 +15,7 @@ class Goal: Identifiable {
     var details: String
     var category: Category
     var isCompleted: Bool = false
+    var isGroup: Bool = false
     var progressValue: Double = 0
     
     init(name: String, details: String, category: Category) {
