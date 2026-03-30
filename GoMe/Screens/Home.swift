@@ -58,6 +58,10 @@ struct Home: View {
                 AddGoal(goals: $goals)
                     .presentationDragIndicator(.visible)
             }
+            .sheet(isPresented: $addWallet) {
+                AddWallet(wallets: $wallets)
+                    .presentationDragIndicator(.visible)
+            }
         }
     }
 
@@ -151,9 +155,7 @@ struct Home: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(.white)
                 Spacer()
-                Button {
-                    addWallet = true
-                } label: {
+                NavigationLink(destination: WalletScreen(wallets: $wallets)) {
                     Image(systemName: "chevron.right")
                         .foregroundStyle(.white.opacity(0.6))
                 }
