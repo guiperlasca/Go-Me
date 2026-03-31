@@ -4,8 +4,6 @@
 //
 //  Created by Aluno-08 on 27/03/26.
 //
-
-import Foundation
 import SwiftUI
 
 struct Home: View {
@@ -37,12 +35,12 @@ struct Home: View {
                             Spacer()
                             
                             HStack(spacing: 16) {
-                                Button { scanner = true } label: {
-                                    Image(systemName: "barcode.viewfinder")
+                                Button { addWallet = true } label: {
+                                    Image(systemName: "wallet.bifold")
                                         .font(.system(size: 18, weight: .semibold))
                                         .foregroundStyle(.white)
                                 }
-                                Button { addWallet = true } label: {
+                                Button { addGoal = true } label: {
                                     Image(systemName: "plus")
                                         .font(.system(size: 18, weight: .semibold))
                                         .foregroundStyle(.white)
@@ -81,7 +79,7 @@ struct Home: View {
                                         .frame(width: 32, height: 32)
                                         .foregroundStyle(.white.opacity(0.8))
 
-                                    Text("Hello,!")
+                                    Text("Hello, user!")
                                         .font(.subheadline)
                                         .fontWeight(.medium)
                                         .foregroundStyle(.white)
@@ -174,7 +172,6 @@ struct Home: View {
                     .padding(.vertical)
                 }
             }
-            .navigationBarHidden(true)
             .sheet(isPresented: $addGoal) {
                 AddGoal(goals: $goals)
                     .presentationDragIndicator(.visible)
