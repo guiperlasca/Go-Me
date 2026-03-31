@@ -18,147 +18,173 @@ struct Home: View {
     @State private var scanner: Bool = false
     
     var totalBalance: Double {
-        wallets.reduce(0) { $0 + $1.money }
+        wallets.reduce(0) { $0 + ($1.isExpense ? -$1.money : $1.money) }
     }
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 24)
-                            .fill(
-                                LinearGradient(
-                                    colors: [.primaryBlue, .primaryGreen],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(height: 180)
+            ZStack {
+                Color.blackBox.ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 24) {
                         
-                        VStack(alignment: .leading, spacing: 0) {
-                            HStack {
-                            Image(systemName: "person.circle")
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 40, height: 40)
-                                    .clipShape(Circle())
-                                    .foregroundStyle(.white.opacity(0.8))
-
-                                Text("Hello user!")
-                                    .font(.headline)
-                                    .foregroundStyle(.white)
-                                
-                                Spacer()
-                            }
+                        // MARK: - Custom Top Bar
+                        HStack {
+                            Text("GOMe")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(Color.primaryBlue)
                             
-                            VStack{
-                                VStack (alignment: .leading) {
-                                Text("Todal Balance")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.white.opacity(0.8))
-                                    Spacer()
-                                Text(totalBalance, format: .currency(code: "BRL"))
-                                    .font(.system(.title, weight: .bold))
-                                    .foregroundStyle(.white)
-                            }
-                            .padding()
-                                VStack {
-                                    Text("Monthy expenses")
-                                        .foregroundStyle(.white.opacity(0.8))
+                            Spacer()
+                            
+                            HStack(spacing: 16) {
+                                Button { scanner = true } label: {
+                                    Image(systemName: "barcode.viewfinder")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundStyle(.white)
+                                }
+                                Button { addWallet = true } label: {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundStyle(.white)
                                 }
                             }
-                        }
-                        .padding(20)
-                    }
-                    .padding(.horizontal)
-                
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("Goals")
-                                .foregroundStyle(.white)
-                                .font(.system(.title3, weight: .semibold))
-                                Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(.white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(Color.white.opacity(0.08))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                                    )
+                            )
                         }
                         .padding(.horizontal)
                         
-                        if goals.isEmpty {
-                            Text("No goals added.")
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal)
-                        } else {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 12) {
-                                    ForEach(goals) { goal in
-                                        GoalView(goal: goal)
-                                            .contextMenu {
-                                                Button("Delete", systemImage: "trash", role: .destructive) {
-                                                    goals.removeAll { $0.id == goal.id }
-                                                }
-                                            }
+                        // MARK: - Balance Card
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 24)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.primaryBlue.opacity(0.4), Color.primaryGreen.opacity(0.3)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(height: 180)
+                            
+                            VStack(alignment: .leading, spacing: 16) {
+                                HStack {
+                                    Image(systemName: "person.circle.fill")
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 32, height: 32)
+                                        .foregroundStyle(.white.opacity(0.8))
+
+                                    Text("Hello,!")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(.white)
+                                    
+                                    Spacer()
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(totalBalance, format: .currency(code: "USD"))
+                                        .font(.system(size: 38, weight: .bold))
+                                        .foregroundStyle(.white)
+                                }
+                                
+                                HStack {
+                                    Spacer()
+                                    Text("-$0.00")
+                                        .font(.system(size: 22, weight: .medium))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                            .padding(24)
+                        }
+                        .padding(.horizontal)
+                    
+                        // MARK: - Goals Section
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text("Goals")
+                                    .foregroundStyle(.white)
+                                    .font(.system(size: 16, weight: .medium))
+                                Spacer()
+                                NavigationLink(destination: GoalsScreen(goals: $goals)) {
+                                    Image(systemName: "chevron.right")
+                                        .foregroundStyle(.white.opacity(0.6))
+                                }
+                            }
+                            .padding(.horizontal)
+                            
+                            if goals.isEmpty {
+                                Text("No goals added.")
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal)
+                            } else {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 12) {
+                                        ForEach(goals) { goal in
+                                            GoalView(goal: goal, compact: true)
+                                        }
+                                    }
+                                    .padding(.horizontal)
+                                }
+                            }
+                        }
+                        
+                        // MARK: - Wallet Section
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text("Wallet")
+                                    .foregroundStyle(.white)
+                                    .font(.system(size: 16, weight: .medium))
+                                Spacer()
+                                NavigationLink(destination: WalletScreen(wallets: $wallets)) {
+                                    Image(systemName: "chevron.right")
+                                        .foregroundStyle(.white.opacity(0.6))
+                                }
+                            }
+                            .padding(.horizontal)
+
+                            if wallets.isEmpty {
+                                Text("No expenses/incomes yet.")
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal)
+                            } else {
+                                VStack(spacing: 8) {
+                                    ForEach(wallets) { wallet in
+                                        WalletView(wallet: wallet)
                                     }
                                 }
                                 .padding(.horizontal)
-                            }
-                        }
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("Wallet")
-                                .foregroundStyle(.white)
-                                .font(.system(.title3, weight: .semibold))
-                                Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(.white)
-                        }
-                        .padding(.horizontal)
-
-                        if wallets.isEmpty {
-                            Text("No expenses/incomes yet.")
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal)
-                        } else {
-                            VStack(spacing: 10) {
-                                ForEach(wallets) { wallet in
-                                    WalletView(wallet: wallet)
-                                        .padding(.horizontal)
-                                        .swipeActions(edge: .trailing) {
-                                            Button("Deletar", systemImage: "trash", role: .destructive) {
-                                                wallets.removeAll { $0.id == wallet.id }
-                                            }
-                                        }
+                                
+                                NavigationLink(destination: WalletScreen(wallets: $wallets)) {
+                                    Text("View All")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundStyle(Color.primaryBlue)
+                                        .padding(.vertical, 16)
+                                        .frame(maxWidth: .infinity)
                                 }
                             }
                         }
                     }
-                }
-                .padding(.vertical)
-            }
-            .background(.blackBox)
-            .navigationTitle("Home")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button("AddGoal", systemImage: "plus") {
-                        addGoal = true
-                    }
-                    Button("AddWallet", systemImage: "creditcard") {
-                        addWallet = true
-                    }
+                    .padding(.vertical)
                 }
             }
+            .navigationBarHidden(true)
             .sheet(isPresented: $addGoal) {
-                AddGoal()
+                AddGoal(goals: $goals)
                     .presentationDragIndicator(.visible)
             }
-//            .sheet(isPresented: $addWallet) {
-//                AddWallet()
-//                    .presentationDragIndicator(.visible)
-//            }
+            .sheet(isPresented: $addWallet) {
+                AddWallet(wallets: $wallets)
+                    .presentationDragIndicator(.visible)
+            }
         }
     }
 }
