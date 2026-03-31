@@ -20,7 +20,6 @@ struct GoalsScreen: View {
     @State private var selectedCategory: Category? = nil
     @State private var selectedGoalID: UUID? = nil
     @State private var showAddGoal: Bool = false
-    @State private var showCategoryPicker: Bool = false
 
     @Environment(\.dismiss) private var dismiss
 
@@ -46,6 +45,7 @@ struct GoalsScreen: View {
                 tabPicker
                     .padding(.top, 12)
                     .padding(.horizontal)
+                
                 categoryFilter
                     .padding(.top, 16)
                     .padding(.horizontal)
@@ -91,12 +91,6 @@ struct GoalsScreen: View {
         .sheet(isPresented: $showAddGoal) {
             AddGoal(goals: $goals)
                 .presentationDragIndicator(.visible)
-        }
-        .confirmationDialog("Select Category", isPresented: $showCategoryPicker, titleVisibility: .visible) {
-            Button("All") { selectedCategory = nil }
-            ForEach(Category.allCases) { cat in
-                Button(cat.rawValue) { selectedCategory = cat }
-            }
         }
     }
 
@@ -150,16 +144,34 @@ struct GoalsScreen: View {
     }
 
     private var categoryFilter: some View {
-        HStack {
-            Image(systemName: "list.bullet")
+        HStack(spacing: 12) {
+            Image(systemName: selectedCategory?.imageName ?? "list.bullet")
                 .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .foregroundStyle(Color.primaryBlue) // Utilizando a cor principal azul do app
+                )
+            
             Text("Category")
                 .foregroundStyle(.white)
                 .font(.system(size: 15))
+            
             Spacer()
-            Button { showCategoryPicker = true } label: {
+            
+            Menu {
+                Button("All", systemImage: "square.grid.2x2") {
+                    selectedCategory = nil
+                }
+                
+                ForEach(Category.allCases) { cat in
+                    Button(cat.rawValue, systemImage: cat.imageName) {
+                        selectedCategory = cat
+                    }
+                }
+            } label: {
                 HStack(spacing: 4) {
-                    Text(selectedCategory?.rawValue ?? "Select")
+                    Text(selectedCategory?.rawValue ?? "All")
                         .foregroundStyle(Color.primaryBlue)
                         .font(.system(size: 15, weight: .semibold))
                     Image(systemName: "chevron.up.chevron.down")
@@ -169,8 +181,8 @@ struct GoalsScreen: View {
             }
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.08)))
+        .padding(.vertical, 10)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.08)))
     }
 
     private var emptyState: some View {
