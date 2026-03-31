@@ -41,7 +41,6 @@ struct GoalsScreen: View {
             Color.blackBox.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                navBar
                 tabPicker
                     .padding(.top, 12)
                     .padding(.horizontal)
@@ -72,52 +71,34 @@ struct GoalsScreen: View {
                 }
             }
 
-            Button { showAddGoal = true } label: {
+            Button {
+                showAddGoal = true
+            } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(width: 56, height: 56)
-                    .background(
-                        Circle()
-                            .fill(Color.blackBox)
-                            .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1))
-                            .shadow(color: .black.opacity(0.4), radius: 8, x: 0, y: 4)
-                    )
+                    .glassEffect(in: .circle)
             }
             .padding(.trailing, 20)
             .padding(.bottom, 28)
         }
-        .navigationBarHidden(true)
+        .navigationTitle("Goals")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { } label: {
+                    Image(systemName: "magnifyingglass")
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
         .sheet(isPresented: $showAddGoal) {
             AddGoal(goals: $goals)
                 .presentationDragIndicator(.visible)
         }
-    }
-
-    private var navBar: some View {
-        HStack {
-            Button { dismiss() } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(Circle().fill(Color.white.opacity(0.12)))
-            }
-            Spacer()
-            Text("Goals")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(.white)
-            Spacer()
-            Button { } label: {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(Circle().fill(Color.white.opacity(0.12)))
-            }
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 12)
     }
 
     private var tabPicker: some View {
@@ -150,7 +131,7 @@ struct GoalsScreen: View {
                 .frame(width: 32, height: 32)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .foregroundStyle(Color.primaryBlue) // Utilizando a cor principal azul do app
+                        .foregroundStyle(Color.primaryBlue)
                 )
             
             Text("Category")
@@ -219,5 +200,7 @@ struct GoalsScreen: View {
 
         return [g1, g2, g3]
     }()
-    return GoalsScreen(goals: $goals)
+    return NavigationStack {
+        GoalsScreen(goals: $goals)
+    }
 }

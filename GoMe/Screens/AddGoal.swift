@@ -140,17 +140,13 @@ struct AddGoal: View {
             .navigationTitle("New Goal")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
                             .foregroundStyle(.primary)
-                            .frame(width: 36, height: 36)
-                            .background(
-                                Circle()
-                                    .foregroundStyle(fieldBackground)
-                            )
                     }
                 }
 
