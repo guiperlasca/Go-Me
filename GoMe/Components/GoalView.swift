@@ -13,6 +13,7 @@ struct GoalView: View {
     var goal: Goal
     var isSelected: Bool = false
     var compact: Bool = false
+    var groupImage: UIImage? = nil
 
     private var daysLeft: Int {
         guard let end = goal.endDate else { return 999 }
@@ -121,6 +122,17 @@ struct GoalView: View {
                         .stroke(isSelected ? Color.primaryBlue : Color.clear, lineWidth: 2)
                 )
         )
+        .overlay(alignment: .topTrailing) {
+            if let groupImage {
+                Image(uiImage: groupImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 28, height: 28)
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                    .padding(8)
+            }
+        }
     }
 }
 

@@ -41,25 +41,35 @@ struct WalletScreen: View {
                 if filtered.isEmpty {
                     emptyState
                 } else {
-                    ScrollView {
-                        VStack(spacing: 8) {
-                            ForEach(filtered) { wallet in
-                                WalletView(wallet: wallet)
-                                    .padding(.horizontal)
-                                    .swipeActions(edge: .trailing) {
-                                        Button("Delete", systemImage: "trash", role: .destructive) {
-                                            wallets.removeAll { $0.id == wallet.id }
-                                        }
+                    List {
+                        ForEach(filtered) { wallet in
+                            WalletView(wallet: wallet)
+                                .listRowBackground(Color.clear)
+                                .listRowSeparatorTint(.white.opacity(0.06))
+                                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                                .swipeActions(edge: .trailing) {
+                                    Button("Delete", systemImage: "trash", role: .destructive) {
+                                        wallets.removeAll { $0.id == wallet.id }
                                     }
-                            }
+                                }
                         }
-                        .padding(.top, 16)
-                        .padding(.bottom, 100)
                     }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .padding(.top, 8)
                 }
             }
 
-            bottomBar
+            // FAB - Add transaction
+            Button { showAddWallet = true } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 56, height: 56)
+                    .glassEffect(in: .circle)
+            }
+            .padding(.trailing, 20)
+            .padding(.bottom, 28)
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showAddWallet) {
@@ -82,13 +92,8 @@ struct WalletScreen: View {
                 .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(.white)
             Spacer()
-            Button {} label: {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(Circle().fill(Color.white.opacity(0.12)))
-            }
+            // Spacer to balance the back button
+            Color.clear.frame(width: 36, height: 36)
         }
         .padding(.horizontal)
         .padding(.vertical, 12)
@@ -131,28 +136,6 @@ struct WalletScreen: View {
                 .foregroundStyle(.white.opacity(0.35))
             Spacer()
         }
-    }
-
-    private var bottomBar: some View {
-        HStack(spacing: 12) {
-            Spacer()
-            Button {} label: {
-                Image(systemName: "squareshape.squareshape.dashed")
-                    .font(.system(size: 20))
-                    .foregroundStyle(.white)
-                    .frame(width: 48, height: 48)
-                    .background(Circle().fill(Color.white.opacity(0.1)).overlay(Circle().stroke(Color.white.opacity(0.25), lineWidth: 1)))
-            }
-            Button { showAddWallet = true } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 48, height: 48)
-                    .background(Circle().fill(Color.white.opacity(0.1)).overlay(Circle().stroke(Color.white.opacity(0.25), lineWidth: 1)))
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 28)
     }
 }
 

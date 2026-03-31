@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct GoalDetailScreen: View {
     @Binding var goal: Goal
@@ -8,6 +9,18 @@ struct GoalDetailScreen: View {
     var onShareEnabled: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
+
+    @State private var selectedPhotoItem: PhotosPickerItem? = nil
+    @State private var selectedImage: Image? = nil
+
+    private let fieldBackground = Color(white: 0.17)
+
+    private var goalShareURL: String {
+        if goal.groupCode == nil {
+            goal.groupCode = UUID().uuidString.prefix(6).uppercased()
+        }
+        return "Join my GoMe goal group! Open: gome://join?code=\(goal.groupCode!)"
+    }
 
     var body: some View {
         ZStack {
@@ -21,13 +34,12 @@ struct GoalDetailScreen: View {
 
                     form
                         .padding(.top, 6)
-
-                    deleteButton
-                        .padding(.top, 56)
-                        .padding(.bottom, 28)
                 }
                 .padding(.horizontal, 22)
+                .padding(.bottom, 100)
             }
+
+            trashButton
         }
         .preferredColorScheme(.dark)
         .onChange(of: goal.isGroup) { oldValue, newValue in
@@ -35,7 +47,14 @@ struct GoalDetailScreen: View {
                 onShareEnabled()
             }
         }
+        .onAppear {
+            if let data = goal.groupImageData,
+               let uiImage = UIImage(data: data) {
+                selectedImage = Image(uiImage: uiImage)
+            }
+        }
     }
+
 
     private var topBar: some View {
         HStack {
@@ -52,7 +71,7 @@ struct GoalDetailScreen: View {
             Spacer()
 
             HStack(spacing: 12) {
-                Image(systemName: headerSymbol)
+                Image(systemName: goal.category.imageName)
                     .font(.system(size: 32, weight: .regular))
                 
                 Text(goal.name.isEmpty ? "Goal" : goal.name)
@@ -75,6 +94,7 @@ struct GoalDetailScreen: View {
             }
         }
     }
+
 
     private var form: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -124,6 +144,15 @@ struct GoalDetailScreen: View {
                     .background(inputBackground())
                 }
             }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(Color.white.opacity(0.03))
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(Color.primaryBlue, lineWidth: 1.5)
+            }
 
             VStack(alignment: .leading, spacing: 12) {
                 Text("Description")
@@ -155,38 +184,57 @@ struct GoalDetailScreen: View {
                 .padding(.horizontal, 18)
                 .frame(height: 66)
                 .background(inputBackground())
-                
+
                 if goal.isGroup {
-                    HStack {
-                        HStack(spacing: -14) {
-                            ForEach(0..<3) { _ in
-                                Image(systemName: "person.circle.fill")
+                    VStack(spacing: 16) {
+                        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                            if let selectedImage {
+                                selectedImage
                                     .resizable()
-                                    .frame(width: 42, height: 42)
-                                    .foregroundStyle(Color.primaryBlue, .white.opacity(0.1))
-                                    .background(Circle().fill(Color.blackBox))
-                                    .overlay(Circle().stroke(Color.blackBox, lineWidth: 2))
+                                    .scaledToFill()
+                                    .frame(width: 72, height: 72)
+                                    .clipShape(Circle())
+                                    .overlay(Circle().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                            } else {
+                                Image(systemName: "photo.badge.plus")
+                                    .font(.system(size: 26))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 72, height: 72)
+                                    .background(
+                                        Circle()
+                                            .fill(fieldBackground)
+                                            .overlay(Circle().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                                    )
                             }
                         }
-                        
-                        Spacer()
-                        
-                        Button {
-                            onShareEnabled()
-                        } label: {
+                        .onChange(of: selectedPhotoItem) { newItem in
+                            Task {
+                                if let data = try? await newItem?.loadTransferable(type: Data.self),
+                                   let uiImage = UIImage(data: data) {
+                                    goal.groupImageData = data
+                                    selectedImage = Image(uiImage: uiImage)
+                                }
+                            }
+                        }
+
+                        ShareLink(item: goalShareURL) {
                             HStack(spacing: 8) {
+                                Image(systemName: "link")
+                                    .font(.system(size: 16, weight: .semibold))
                                 Text("Share")
-                                    .font(.system(size: 16, weight: .medium))
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.system(size: 16, weight: .medium))
+                                    .font(.system(size: 16, weight: .semibold))
                             }
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 20)
-                            .frame(height: 48)
-                            .glassEffect(in: Capsule())
+                            .padding(.horizontal, 40)
+                            .padding(.vertical, 14)
+                            .background(
+                                Capsule()
+                                    .fill(fieldBackground)
+                                    .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                            )
                         }
+                        .padding(.top, 16)
                     }
-                    .padding(.horizontal, 10)
                     .padding(.top, 4)
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
@@ -194,6 +242,7 @@ struct GoalDetailScreen: View {
             .animation(.spring(response: 0.35, dampingFraction: 0.8), value: goal.isGroup)
         }
     }
+
 
     private var categoryRow: some View {
         HStack(spacing: 10) {
@@ -229,28 +278,28 @@ struct GoalDetailScreen: View {
         .background(inputBackground())
     }
 
-    private var deleteButton: some View {
-        Button {
-            onDelete()
-            dismiss()
-        } label: {
-            Text("Delete")
-                .font(.system(size: 21, weight: .medium))
-                .foregroundStyle(.white)
-                .frame(width: 210, height: 58)
-                .glassEffect(in: Capsule())
+
+    private var trashButton: some View {
+        VStack {
+            Spacer()
+            HStack {
+                Spacer()
+                Button {
+                    onDelete()
+                    dismiss()
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.white)
+                        .frame(width: 56, height: 56)
+                        .glassEffect(in: .circle)
+                }
+            }
         }
-        .frame(maxWidth: .infinity)
+        .padding(.trailing, 26)
+        .padding(.bottom, 30)
     }
 
-    private var headerSymbol: String {
-        switch goal.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
-        case "tv", "televisao", "televisão", "television":
-            return "tv"
-        default:
-            return goal.category.imageName
-        }
-    }
 
     private func inputBackground(_ radius: CGFloat = 22) -> some View {
         RoundedRectangle(cornerRadius: radius, style: .continuous)
@@ -261,6 +310,7 @@ struct GoalDetailScreen: View {
             }
     }
 }
+
 
 struct DarkKnobToggleStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {

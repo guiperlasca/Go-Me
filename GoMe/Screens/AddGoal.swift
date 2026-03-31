@@ -23,9 +23,15 @@ struct AddGoal: View {
     
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
     @State private var selectedImage: Image? = nil
+    @State private var selectedImageData: Data? = nil
+    @State private var generatedGroupCode: String = UUID().uuidString.prefix(6).uppercased()
 
     private let accentTeal = Color(red: 0/255, green: 139/255, blue: 185/255)
     private let fieldBackground = Color(white: 0.17)
+
+    private var shareURL: String {
+        "Join my GoMe goal group! Open: gome://join?code=\(generatedGroupCode)"
+    }
 
     var body: some View {
         NavigationStack {
@@ -58,6 +64,7 @@ struct AddGoal: View {
                             Task {
                                 if let data = try? await newItem?.loadTransferable(type: Data.self),
                                    let uiImage = UIImage(data: data) {
+                                    selectedImageData = data
                                     selectedImage = Image(uiImage: uiImage)
                                 }
                             }
@@ -165,10 +172,7 @@ struct AddGoal: View {
                     )
                     
                     if isSharedGoal {
-                        let groupCode = UUID().uuidString.prefix(6).uppercased()
-                        let shareMessage = "Join my GoMe goal group! Use the code: \(groupCode)"
-                        
-                        ShareLink(item: shareMessage) {
+                        ShareLink(item: shareURL) {
                             HStack(spacing: 8) {
                                 Image(systemName: "link")
                                     .font(.system(size: 16, weight: .semibold))
@@ -209,6 +213,10 @@ struct AddGoal: View {
                         g.endDate = endDate
                         g.isGroup = isSharedGoal
                         g.money = Double(price) ?? 0
+                        g.groupImageData = selectedImageData
+                        if isSharedGoal {
+                            g.groupCode = generatedGroupCode
+                        }
                         goals.append(g)
                         dismiss()
                     }

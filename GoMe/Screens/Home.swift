@@ -13,10 +13,16 @@ struct Home: View {
     
     @State private var addGoal: Bool = false
     @State private var addWallet: Bool = false
-    @State private var scanner: Bool = false
+    
+    @State private var joinGoal: Goal? = nil
+    @State private var showJoinSheet: Bool = false
     
     var totalBalance: Double {
         wallets.reduce(0) { $0 + ($1.isExpense ? -$1.money : $1.money) }
+    }
+
+    var totalExpenses: Double {
+        wallets.filter { $0.isExpense }.reduce(0) { $0 + $1.money }
     }
     
     var body: some View {
@@ -59,7 +65,6 @@ struct Home: View {
                         }
                         .padding(.horizontal)
                         
-                        // MARK: - Balance Card
                         ZStack {
                             RoundedRectangle(cornerRadius: 24)
                                 .fill(
@@ -95,7 +100,7 @@ struct Home: View {
                                 
                                 HStack {
                                     Spacer()
-                                    Text("-$0.00")
+                                    Text("-") + Text(totalExpenses, format: .currency(code: "USD"))
                                         .font(.system(size: 22, weight: .medium))
                                         .foregroundStyle(.white)
                                 }
@@ -104,7 +109,6 @@ struct Home: View {
                         }
                         .padding(.horizontal)
                     
-                        // MARK: - Goals Section
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text("Goals")
@@ -180,6 +184,31 @@ struct Home: View {
                 AddWallet(wallets: $wallets)
                     .presentationDragIndicator(.visible)
             }
+            .sheet(isPresented: $showJoinSheet) {
+                if let goal = joinGoal {
+                    JoinGroupSheet(goal: goal) {
+                        goals.append(goal)
+                    }
+                    .presentationDragIndicator(.visible)
+                    .presentationDetents([.medium])
+                }
+            }
+            .onOpenURL { url in
+                handleInviteURL(url)
+            }
+        }
+    }
+    
+    private func handleInviteURL(_ url: URL) {
+        guard url.scheme == "gome",
+              url.host == "join",
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let codeItem = components.queryItems?.first(where: { $0.name == "code" }),
+              let code = codeItem.value else { return }
+        
+        if let existing = goals.first(where: { $0.groupCode == code }) {
+            joinGoal = existing
+            showJoinSheet = true
         }
     }
 }

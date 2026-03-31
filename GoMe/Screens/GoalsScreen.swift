@@ -20,6 +20,9 @@ struct GoalsScreen: View {
     @State private var selectedCategory: Category? = nil
     @State private var selectedGoalID: UUID? = nil
     @State private var showAddGoal: Bool = false
+    @State private var showingDetailGoalIndex: Int? = nil
+    @State private var isSearching: Bool = false
+    @State private var searchText: String = ""
 
     @Environment(\.dismiss) private var dismiss
 
@@ -27,7 +30,8 @@ struct GoalsScreen: View {
         goals.filter { goal in
             let tabMatch: Bool = selectedTab == .personal ? !goal.isGroup : goal.isGroup
             let catMatch = selectedCategory == nil || goal.category == selectedCategory
-            return tabMatch && catMatch
+            let searchMatch = searchText.isEmpty || goal.name.localizedCaseInsensitiveContains(searchText)
+            return tabMatch && catMatch && searchMatch
         }
     }
 
@@ -44,27 +48,98 @@ struct GoalsScreen: View {
                 tabPicker
                     .padding(.top, 12)
                     .padding(.horizontal)
-                
+
+                if isSearching {
+                    HStack(spacing: 10) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.white.opacity(0.5))
+                        TextField("Search goals...", text: $searchText)
+                            .font(.system(size: 16))
+                            .foregroundStyle(.white)
+                        if !searchText.isEmpty {
+                            Button {
+                                searchText = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(.white.opacity(0.4))
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.08)))
+                    .padding(.horizontal)
+                    .padding(.top, 12)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
                 categoryFilter
-                    .padding(.top, 16)
+                    .padding(.top, isSearching ? 8 : 16)
                     .padding(.horizontal)
 
                 if filteredGoals.isEmpty {
                     emptyState
                 } else {
                     ScrollView {
-                        LazyVGrid(columns: columns, spacing: 12) {
-                            ForEach(filteredGoals) { goal in
-                                GoalView(goal: goal, isSelected: goal.id == selectedGoalID)
-                                    .onTapGesture { selectedGoalID = goal.id }
-                                    .contextMenu {
-                                        Button("Delete", systemImage: "trash", role: .destructive) {
-                                            goals.removeAll { $0.id == goal.id }
+                        VStack(alignment: .leading, spacing: 16) {
+                            if selectedTab == .group {
+                                Text("Groups")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 16) {
+                                        ForEach(filteredGoals) { goal in
+                                            if let data = goal.groupImageData,
+                                               let uiImage = UIImage(data: data) {
+                                                Image(uiImage: uiImage)
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(width: 56, height: 56)
+                                                    .clipShape(Circle())
+                                                    .overlay(Circle().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                                            } else {
+                                                Image(systemName: "person.2.badge.plus")
+                                                    .font(.system(size: 22))
+                                                    .foregroundStyle(.white.opacity(0.5))
+                                                    .frame(width: 56, height: 56)
+                                                    .background(
+                                                        Circle()
+                                                            .fill(Color.white.opacity(0.08))
+                                                            .overlay(Circle().stroke(Color.white.opacity(0.1), lineWidth: 1))
+                                                    )
+                                            }
                                         }
                                     }
+                                    .padding(.horizontal)
+                                }
                             }
+
+                            LazyVGrid(columns: columns, spacing: 12) {
+                                ForEach(filteredGoals) { goal in
+                                    let groupImg: UIImage? = {
+                                        guard let data = goal.groupImageData else { return nil }
+                                        return UIImage(data: data)
+                                    }()
+                                    GoalView(goal: goal, isSelected: goal.id == selectedGoalID, groupImage: groupImg)
+                                        .onTapGesture {
+                                            selectedGoalID = goal.id
+                                            if let idx = goals.firstIndex(where: { $0.id == goal.id }) {
+                                                showingDetailGoalIndex = idx
+                                            }
+                                        }
+                                        .contextMenu {
+                                            Button("Delete", systemImage: "trash", role: .destructive) {
+                                                goals.removeAll { $0.id == goal.id }
+                                            }
+                                        }
+                                }
+                            }
+                            .padding(.horizontal)
                         }
-                        .padding(.horizontal)
                         .padding(.top, 16)
                         .padding(.bottom, 90)
                     }
@@ -87,10 +162,21 @@ struct GoalsScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
-            
+            ToolbarItem(placement: .topBarLeading) {
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
-                Button { } label: {
-                    Image(systemName: "magnifyingglass")
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        isSearching.toggle()
+                        if !isSearching { searchText = "" }
+                    }
+                } label: {
+                    Image(systemName: isSearching ? "xmark" : "magnifyingglass")
                 }
             }
         }
@@ -98,6 +184,17 @@ struct GoalsScreen: View {
         .sheet(isPresented: $showAddGoal) {
             AddGoal(goals: $goals)
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $showingDetailGoalIndex) { idx in
+            if idx < goals.count {
+                GoalDetailScreen(
+                    goal: $goals[idx],
+                    onDelete: {
+                        goals.remove(at: idx)
+                    }
+                )
+                .presentationDragIndicator(.visible)
+            }
         }
     }
 
@@ -181,6 +278,10 @@ struct GoalsScreen: View {
             Spacer()
         }
     }
+}
+
+extension Int: @retroactive Identifiable {
+    public var id: Int { self }
 }
 
 #Preview {
