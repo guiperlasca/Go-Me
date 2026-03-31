@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import PhotosUI
 
 struct AddGoal: View {
 
@@ -19,18 +20,50 @@ struct AddGoal: View {
     @State private var isSharedGoal = false
     @State private var endDate = Date()
     @State private var price: String = ""
-
+    
+    @State private var selectedPhotoItem: PhotosPickerItem? = nil
+    @State private var selectedImage: Image? = nil
 
     private let accentTeal = Color(red: 0/255, green: 139/255, blue: 185/255)
-
     private let fieldBackground = Color(white: 0.17)
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 12) {
+                    
+                    if isSharedGoal {
+                        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                            if let selectedImage {
+                                selectedImage
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 72, height: 72)
+                                    .clipShape(Circle())
+                                    .overlay(Circle().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                            } else {
+                                Image(systemName: "photo.badge.plus")
+                                    .font(.system(size: 26))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 72, height: 72)
+                                    .background(
+                                        Circle()
+                                            .fill(fieldBackground)
+                                            .overlay(Circle().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                                    )
+                            }
+                        }
+                        .padding(.bottom, 8)
+                        .onChange(of: selectedPhotoItem) { newItem in
+                            Task {
+                                if let data = try? await newItem?.loadTransferable(type: Data.self),
+                                   let uiImage = UIImage(data: data) {
+                                    selectedImage = Image(uiImage: uiImage)
+                                }
+                            }
+                        }
+                    }
 
-                    // MARK: Category
                     HStack(spacing: 12) {
                         Image(systemName: category?.imageName ?? "list.bullet")
                             .foregroundStyle(.white)
@@ -66,7 +99,6 @@ struct AddGoal: View {
                             .foregroundStyle(fieldBackground)
                     )
 
-                    // MARK: Goal Name
                     TextField("Goal name", text: $name)
                         .padding(.vertical, 14)
                         .padding(.horizontal, 8)
@@ -75,7 +107,6 @@ struct AddGoal: View {
                                 .foregroundStyle(fieldBackground)
                         )
 
-                    // MARK: Deadline
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Deadline")
                             .font(.system(.subheadline, weight: .bold))
@@ -108,7 +139,6 @@ struct AddGoal: View {
                         }
                     }
 
-                    // MARK: Description
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Description")
                             .font(.system(.subheadline, weight: .bold))
@@ -124,7 +154,6 @@ struct AddGoal: View {
                             )
                     }
 
-                    // MARK: Shared Goal Toggle
                     Toggle(isOn: $isSharedGoal) {
                         Text("Shared goal")
                     }
@@ -134,19 +163,42 @@ struct AddGoal: View {
                         RoundedRectangle(cornerRadius: 16)
                             .foregroundStyle(fieldBackground)
                     )
+                    
+                    if isSharedGoal {
+                        let groupCode = UUID().uuidString.prefix(6).uppercased()
+                        let shareMessage = "Join my GoMe goal group! Use the code: \(groupCode)"
+                        
+                        ShareLink(item: shareMessage) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "link")
+                                    .font(.system(size: 16, weight: .semibold))
+                                Text("Share")
+                                    .font(.system(size: 16, weight: .semibold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 40)
+                            .padding(.vertical, 14)
+                            .background(
+                                Capsule()
+                                    .fill(fieldBackground)
+                                    .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                            )
+                        }
+                        .padding(.top, 16)
+                    }
                 }
                 .padding()
+                .animation(.easeInOut, value: isSharedGoal)
             }
             .navigationTitle("New Goal")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.white)
                     }
                 }
 
