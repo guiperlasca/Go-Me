@@ -29,7 +29,6 @@ struct Home: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         
-                        // MARK: - Custom Top Bar
                         HStack {
                             Text("GOMe")
                                 .font(.system(size: 20, weight: .semibold))
@@ -137,7 +136,6 @@ struct Home: View {
                             }
                         }
                         
-                        // MARK: - Wallet Section
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text("Wallet")
