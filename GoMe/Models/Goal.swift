@@ -6,7 +6,9 @@
 //
 
 import Foundation
+import Observation
 
+@Observable
 class Goal: Identifiable {
     var id = UUID()
     var name: String
@@ -16,6 +18,8 @@ class Goal: Identifiable {
     var category: Category
     var isCompleted: Bool = false
     var isGroup: Bool = false
+    var groupImageData: Data? = nil
+    var groupCode: String? = nil
     var progressValue: Double = 0
     
     init(name: String, details: String, category: Category) {

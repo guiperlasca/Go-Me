@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import CurrencyField
+import PhotosUI
 
 struct AddGoal: View {
     
@@ -21,14 +22,56 @@ struct AddGoal: View {
     @State private var endDate = Date()
     @State private var moneyDecimal: Int = 0
     
+    @State private var selectedPhotoItem: PhotosPickerItem? = nil
+    @State private var selectedImage: Image? = nil
+    @State private var selectedImageData: Data? = nil
+    @State private var generatedGroupCode: String = UUID().uuidString.prefix(6).uppercased()
+
     private let accentTeal = Color(red: 0/255, green: 139/255, blue: 185/255)
     private let fieldBackground = Color(white: 0.17)
-    
+
+    private var shareURL: String {
+        "Join my GoMe goal group! Open: gome://join?code=\(generatedGroupCode)"
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 12) {
                     
+                    if isSharedGoal {
+                        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                            if let selectedImage {
+                                selectedImage
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 72, height: 72)
+                                    .clipShape(Circle())
+                                    .overlay(Circle().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                            } else {
+                                Image(systemName: "photo.badge.plus")
+                                    .font(.system(size: 26))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 72, height: 72)
+                                    .background(
+                                        Circle()
+                                            .fill(fieldBackground)
+                                            .overlay(Circle().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                                    )
+                            }
+                        }
+                        .padding(.bottom, 8)
+                        .onChange(of: selectedPhotoItem) { newItem in
+                            Task {
+                                if let data = try? await newItem?.loadTransferable(type: Data.self),
+                                   let uiImage = UIImage(data: data) {
+                                    selectedImageData = data
+                                    selectedImage = Image(uiImage: uiImage)
+                                }
+                            }
+                        }
+                    }
+
                     HStack(spacing: 12) {
                         Image(systemName: category?.imageName ?? "list.bullet")
                             .foregroundStyle(.white)
@@ -109,7 +152,30 @@ struct AddGoal: View {
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
-                    .background(RoundedRectangle(cornerRadius: 16).foregroundStyle(fieldBackground))
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .foregroundStyle(fieldBackground)
+                    )
+                    
+                    if isSharedGoal {
+                        ShareLink(item: shareURL) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "link")
+                                    .font(.system(size: 16, weight: .semibold))
+                                Text("Share")
+                                    .font(.system(size: 16, weight: .semibold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 40)
+                            .padding(.vertical, 14)
+                            .background(
+                                Capsule()
+                                    .fill(fieldBackground)
+                                    .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                            )
+                        }
+                        .padding(.top, 16)
+                    }
                 }
                 .padding()
             }
@@ -128,6 +194,10 @@ struct AddGoal: View {
                         g.endDate = endDate
                         g.isGroup = isSharedGoal
                         g.money = NSDecimalNumber(decimal: Decimal(moneyDecimal)).doubleValue
+                        g.groupImageData = selectedImageData
+                        if isSharedGoal {
+                            g.groupCode = generatedGroupCode
+                        }
                         goals.append(g)
                         dismiss()
                     }
