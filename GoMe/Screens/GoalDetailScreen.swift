@@ -12,6 +12,7 @@ struct GoalDetailScreen: View {
 
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
     @State private var selectedImage: Image? = nil
+    @State private var isEditing = false
 
     private let fieldBackground = Color(white: 0.17)
 
@@ -24,24 +25,32 @@ struct GoalDetailScreen: View {
 
     var body: some View {
         ZStack {
-            Color.blackBox.ignoresSafeArea()
+            Color("DarkBackground").ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     topBar
                         .padding(.top, 10)
-                        .padding(.bottom, 34)
+                        .padding(.bottom, goal.isGroup ? 16 : 34)
+
+                    // Group photo pinned to top center when isGroup
+                    if goal.isGroup {
+                        groupPhotoView
+                            .padding(.bottom, 24)
+                            .transition(.opacity.combined(with: .scale(scale: 0.85)))
+                    }
 
                     form
                         .padding(.top, 6)
                 }
                 .padding(.horizontal, 22)
-                .padding(.bottom, 100)
+                .padding(.bottom, 120)
             }
 
-            trashButton
+            bottomButtons
         }
         .preferredColorScheme(.dark)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: goal.isGroup)
         .onChange(of: goal.isGroup) { oldValue, newValue in
             if newValue && !oldValue {
                 onShareEnabled()
@@ -55,6 +64,7 @@ struct GoalDetailScreen: View {
         }
     }
 
+    // MARK: - Top Bar
 
     private var topBar: some View {
         HStack {
@@ -73,7 +83,7 @@ struct GoalDetailScreen: View {
             HStack(spacing: 12) {
                 Image(systemName: goal.category.imageName)
                     .font(.system(size: 32, weight: .regular))
-                
+
                 Text(goal.name.isEmpty ? "Goal" : goal.name)
                     .font(.system(size: 28, weight: .medium, design: .rounded))
                     .lineLimit(1)
@@ -83,18 +93,75 @@ struct GoalDetailScreen: View {
 
             Spacer()
 
+            // Pencil toggles editing mode; shows checkmark to confirm
             Button {
-                onEdit()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                    isEditing.toggle()
+                }
+                if !isEditing { onEdit() }
             } label: {
-                Image(systemName: "pencil")
+                Image(systemName: isEditing ? "checkmark" : "pencil")
                     .font(.system(size: 19, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(isEditing ? Color.green : .white)
                     .frame(width: 48, height: 48)
                     .glassEffect(in: .circle)
             }
         }
     }
 
+    // MARK: - Group Photo (top center)
+
+    private var groupPhotoView: some View {
+        PhotosPicker(
+            selection: isEditing ? $selectedPhotoItem : .constant(nil),
+            matching: .images
+        ) {
+            ZStack(alignment: .bottomTrailing) {
+                if let selectedImage {
+                    selectedImage
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 90, height: 90)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1.5))
+                } else {
+                    Circle()
+                        .fill(fieldBackground)
+                        .frame(width: 90, height: 90)
+                        .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 1))
+                        .overlay {
+                            Image(systemName: "person.2")
+                                .font(.system(size: 28))
+                                .foregroundStyle(Color.white.opacity(0.5))
+                        }
+                }
+
+                if isEditing {
+                    Circle()
+                        .fill(Color.primaryBlue)
+                        .frame(width: 28, height: 28)
+                        .overlay {
+                            Image(systemName: "photo.badge.plus")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.white)
+                        }
+                        .offset(x: 2, y: 2)
+                }
+            }
+        }
+        .onChange(of: selectedPhotoItem) { newItem in
+            Task {
+                if let data = try? await newItem?.loadTransferable(type: Data.self),
+                   let uiImage = UIImage(data: data) {
+                    goal.groupImageData = data
+                    selectedImage = Image(uiImage: uiImage)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Form
 
     private var form: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -106,6 +173,8 @@ struct GoalDetailScreen: View {
                 .padding(.horizontal, 18)
                 .frame(height: 64)
                 .background(inputBackground())
+                .disabled(!isEditing)
+                .opacity(isEditing ? 1 : 0.75)
 
             VStack(alignment: .leading, spacing: 12) {
                 Text("Deadline")
@@ -129,6 +198,8 @@ struct GoalDetailScreen: View {
                     .padding(.horizontal, 18)
                     .frame(height: 64)
                     .background(inputBackground())
+                    .disabled(!isEditing)
+                    .opacity(isEditing ? 1 : 0.75)
 
                     TextField(
                         "$ 0",
@@ -142,6 +213,8 @@ struct GoalDetailScreen: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 64)
                     .background(inputBackground())
+                    .disabled(!isEditing)
+                    .opacity(isEditing ? 1 : 0.75)
                 }
             }
             .padding(14)
@@ -163,86 +236,29 @@ struct GoalDetailScreen: View {
                     .scrollContentBackground(.hidden)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 12)
-                    .frame(minHeight: 120)
+                    .frame(minHeight: 72)
                     .font(.system(size: 18))
                     .foregroundStyle(.white)
                     .background(inputBackground())
+                    .disabled(!isEditing)
+                    .opacity(isEditing ? 1 : 0.75)
             }
 
-            VStack(spacing: 16) {
-                HStack {
-                    Text("Shared goal")
-                        .font(.system(size: 18, weight: .regular))
-                        .foregroundStyle(.white)
-
-                    Spacer()
-
-                    Toggle("", isOn: $goal.isGroup)
-                        .labelsHidden()
-                        .toggleStyle(DarkKnobToggleStyle())
-                }
-                .padding(.horizontal, 18)
-                .frame(height: 66)
-                .background(inputBackground())
-
-                if goal.isGroup {
-                    VStack(spacing: 16) {
-                        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                            if let selectedImage {
-                                selectedImage
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 72, height: 72)
-                                    .clipShape(Circle())
-                                    .overlay(Circle().stroke(Color.white.opacity(0.15), lineWidth: 1))
-                            } else {
-                                Image(systemName: "photo.badge.plus")
-                                    .font(.system(size: 26))
-                                    .foregroundStyle(.white)
-                                    .frame(width: 72, height: 72)
-                                    .background(
-                                        Circle()
-                                            .fill(fieldBackground)
-                                            .overlay(Circle().stroke(Color.white.opacity(0.15), lineWidth: 1))
-                                    )
-                            }
-                        }
-                        .onChange(of: selectedPhotoItem) { newItem in
-                            Task {
-                                if let data = try? await newItem?.loadTransferable(type: Data.self),
-                                   let uiImage = UIImage(data: data) {
-                                    goal.groupImageData = data
-                                    selectedImage = Image(uiImage: uiImage)
-                                }
-                            }
-                        }
-
-                        ShareLink(item: goalShareURL) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "link")
-                                    .font(.system(size: 16, weight: .semibold))
-                                Text("Share")
-                                    .font(.system(size: 16, weight: .semibold))
-                            }
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 40)
-                            .padding(.vertical, 14)
-                            .background(
-                                Capsule()
-                                    .fill(fieldBackground)
-                                    .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1))
-                            )
-                        }
-                        .padding(.top, 16)
-                    }
-                    .padding(.top, 4)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
+            // Shared goal toggle — same pattern as AddGoal
+            Toggle(isOn: $goal.isGroup) {
+                Text("Shared goal")
+                    .font(.system(size: 18, weight: .regular))
+                    .foregroundStyle(.white)
             }
-            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: goal.isGroup)
+            .tint(.green)
+            .padding(.horizontal, 18)
+            .frame(height: 66)
+            .background(inputBackground())
+            .disabled(!isEditing)
         }
     }
 
+    // MARK: - Category Row
 
     private var categoryRow: some View {
         HStack(spacing: 10) {
@@ -257,33 +273,60 @@ struct GoalDetailScreen: View {
 
             Spacer()
 
-            Menu {
-                ForEach(Category.allCases) { category in
-                    Button(category.rawValue, systemImage: category.imageName) {
-                        goal.category = category
+            if isEditing {
+                Menu {
+                    ForEach(Category.allCases) { category in
+                        Button(category.rawValue, systemImage: category.imageName) {
+                            goal.category = category
+                        }
                     }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("Select")
+                            .font(.system(size: 18, weight: .medium))
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundStyle(Color.primaryBlue)
                 }
-            } label: {
-                HStack(spacing: 6) {
-                    Text("Select")
-                        .font(.system(size: 18, weight: .medium))
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 13, weight: .semibold))
-                }
-                .foregroundStyle(Color.primaryBlue)
+                .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .trailing)))
             }
         }
         .padding(.horizontal, 18)
         .frame(height: 64)
         .background(inputBackground())
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isEditing)
     }
 
+    // MARK: - Bottom Buttons (Trash + Share side by side)
 
-    private var trashButton: some View {
+    private var bottomButtons: some View {
         VStack {
             Spacer()
-            HStack {
+            HStack(alignment: .center) {
                 Spacer()
+
+                if goal.isGroup {
+                    ShareLink(item: goalShareURL) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "link")
+                                .font(.system(size: 15, weight: .semibold))
+                            Text("Share")
+                                .font(.system(size: 15, weight: .semibold))
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 20)
+                        .frame(height: 56)
+                        .background(
+                            Capsule()
+                                .fill(Color.white.opacity(0.08))
+                                .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 1))
+                        )
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+                    .padding(.trailing, 10)
+                }
+
                 Button {
                     onDelete()
                     dismiss()
@@ -298,8 +341,10 @@ struct GoalDetailScreen: View {
         }
         .padding(.trailing, 26)
         .padding(.bottom, 30)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: goal.isGroup)
     }
 
+    // MARK: - Helpers
 
     private func inputBackground(_ radius: CGFloat = 22) -> some View {
         RoundedRectangle(cornerRadius: radius, style: .continuous)
@@ -311,44 +356,23 @@ struct GoalDetailScreen: View {
     }
 }
 
-
-struct DarkKnobToggleStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        Button {
-            withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
-                configuration.isOn.toggle()
-            }
-        } label: {
-            Capsule(style: .continuous)
-                .fill(Color.white.opacity(0.06))
-                .frame(width: 78, height: 42)
-                .overlay(alignment: configuration.isOn ? .trailing : .leading) {
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 34, height: 34)
-                        .padding(4)
-                }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(configuration.isOn ? "Shared goal enabled" : "Shared goal disabled")
-    }
-}
+// MARK: - Preview
 
 #Preview {
     @Previewable @State var sampleGoal: Goal = {
-        let goal = Goal(name: "TV", details: "Tv 4k 75\"", category: .eletronics)
+        let goal = Goal(name: "TV 4K", details: "TV 4k 75\"", category: .eletronics)
         goal.money = 675.0
-        
+
         var dateComponents = DateComponents()
         dateComponents.year = 2025
         dateComponents.month = 4
         dateComponents.day = 1
         goal.endDate = Calendar.current.date(from: dateComponents)
-        
+
         goal.isGroup = true
         return goal
     }()
-    
+
     return NavigationStack {
         GoalDetailScreen(
             goal: $sampleGoal,
