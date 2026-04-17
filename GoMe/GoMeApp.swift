@@ -9,9 +9,21 @@ import SwiftUI
 
 @main
 struct GoMeApp: App {
+    
+    @State private var authManager = AuthManager.shared
+    
     var body: some Scene {
         WindowGroup {
-            Home()
+            Group {
+                if authManager.isAuthenticated {
+                    MainTabView(authManager: authManager)
+                        .transition(.opacity)
+                } else {
+                    LoginScreen(authManager: authManager)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeInOut(duration: 0.4), value: authManager.isAuthenticated)
         }
     }
 }

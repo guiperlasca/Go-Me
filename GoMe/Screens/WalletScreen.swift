@@ -16,6 +16,7 @@ enum WalletTab: String, CaseIterable, Identifiable {
 struct WalletScreen: View {
 
     @Binding var wallets: [Wallet]
+    @Binding var goals: [Goal]
     @State private var selectedTab: WalletTab = .expenses
     @State private var showAddWallet: Bool = false
 
@@ -60,20 +61,30 @@ struct WalletScreen: View {
                 }
             }
 
-            // FAB - Add transaction
+            // FAB
             Button { showAddWallet = true } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(width: 56, height: 56)
-                    .glassEffect(in: .circle)
+                    .background(
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.primaryBlue, Color.primaryGreen],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .shadow(color: Color.primaryBlue.opacity(0.4), radius: 12, y: 4)
+                    )
             }
             .padding(.trailing, 20)
             .padding(.bottom, 28)
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showAddWallet) {
-            AddWallet(wallets: $wallets)
+            AddWallet(wallets: $wallets, goals: $goals)
                 .presentationDragIndicator(.visible)
         }
     }
@@ -92,7 +103,6 @@ struct WalletScreen: View {
                 .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(.white)
             Spacer()
-            // Spacer to balance the back button
             Color.clear.frame(width: 36, height: 36)
         }
         .padding(.horizontal)
@@ -127,13 +137,13 @@ struct WalletScreen: View {
             Spacer()
             Image(systemName: "creditcard.fill")
                 .font(.system(size: 48))
-                .foregroundStyle(.white.opacity(0.3))
+                .foregroundStyle(.white.opacity(0.2))
             Text("No transactions yet")
-                .font(.headline)
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.5))
             Text("Tap + to register a transaction")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.35))
+                .font(.system(size: 14))
+                .foregroundStyle(.white.opacity(0.3))
             Spacer()
         }
     }
@@ -144,10 +154,7 @@ struct WalletScreen: View {
         Wallet(name: "Pizza",       money: 26,   date: Calendar.current.date(byAdding: .day, value: -8, to: Date())!, isExpense: true,  category: .food),
         Wallet(name: "Streaming",   money: 10,   date: Calendar.current.date(byAdding: .day, value: -7, to: Date())!, isExpense: true,  category: .entertainment),
         Wallet(name: "Freelancer",  money: 100,  date: Calendar.current.date(byAdding: .day, value: -7, to: Date())!, isExpense: false, category: .work),
-        Wallet(name: "Coffe",       money: 8,    date: Calendar.current.date(byAdding: .day, value: -7, to: Date())!, isExpense: true,  category: .food),
-        Wallet(name: "Health",      money: 50,   date: Calendar.current.date(byAdding: .day, value: -6, to: Date())!, isExpense: true,  category: .health),
-        Wallet(name: "Burger",      money: 10,   date: Calendar.current.date(byAdding: .day, value: -5, to: Date())!, isExpense: true,  category: .food),
-        Wallet(name: "Payday",      money: 2001, date: Calendar.current.date(byAdding: .day, value: -5, to: Date())!, isExpense: false, category: .work),
     ]
-    return WalletScreen(wallets: $wallets)
+    @Previewable @State var goals: [Goal] = []
+    return WalletScreen(wallets: $wallets, goals: $goals)
 }

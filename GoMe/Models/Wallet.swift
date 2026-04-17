@@ -1,13 +1,14 @@
+//
 //  Wallet.swift
 //  GoMe
 //
 //  Created by Aluno-08 on 27/03/26.
 //
-//comentario
-import Foundation
-import SwiftData
 
-@Model
+import Foundation
+import Observation
+
+@Observable
 class Wallet: Identifiable {
     var id = UUID()
     var name: String
@@ -15,12 +16,14 @@ class Wallet: Identifiable {
     var category: Category
     var isExpense: Bool = true
     var date: Date = Date()
+    var linkedGoalID: UUID? = nil
     
-    init(name: String, money: Double, date: Date = Date(), isExpense: Bool = true, category: Category) {
+    init(name: String, money: Double, date: Date = Date(), isExpense: Bool = true, category: Category, linkedGoalID: UUID? = nil) {
         self.name = name
         self.money = money
         self.date = date
         self.isExpense = isExpense
         self.category = category
+        self.linkedGoalID = linkedGoalID
     }
 }
